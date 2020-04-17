@@ -1,0 +1,9 @@
+{
+  "title" : "Better Doors - Group DarkRP Doors together",
+  "type"  : "tool",
+  "tags"  : ["roleplay"],
+  "ignore": [
+    "*.pdn",
+    "*.jpg"
+  ]
+}
