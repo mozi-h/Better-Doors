@@ -4,6 +4,9 @@
   "tags"  : ["roleplay"],
   "ignore": [
     "*.pdn",
-    "*.jpg"
+    "*.jpg",
+    "*.gitignore",
+    "betterdoors_mapdata/*",
+    ".git/*"
   ]
 }
