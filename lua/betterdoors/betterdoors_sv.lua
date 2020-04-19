@@ -27,6 +27,11 @@ local function getDoor(ply)
   return door
 end
 
+-- Returns true if the door is ownable and has no assigned teams / groups
+function isDoorOverwritten(door)
+  return door:getKeysDoorGroup() != nil or door:getKeysDoorTeams() != nil or door:getKeysNonOwnable() != nil
+end
+
 --[[### Define chat commands ###]]--
 DarkRP.defineChatCommand("setgroup", function(ply, argStr)
   local door = getDoor(ply)
@@ -91,8 +96,8 @@ end)
 
 --[[### Implement functionality ###]]--
 -- OWNER
-hook.Add("playerBoughtDoor", "bd_playerBoughtDoor", function(ply, door, cost)
-  local group = bd_doorData[door:MapCreationID()]
+hook.Add("playerBoughtDoor", "bd_playerBoughtDoor", function(ply, boughtDoor, cost)
+  local group = bd_doorData[boughtDoor:MapCreationID()]
   if group == nil then
     -- Door is not in a group, don't intervene
     return
@@ -101,7 +106,9 @@ hook.Add("playerBoughtDoor", "bd_playerBoughtDoor", function(ply, door, cost)
   -- Buy other group doors, that are availabe
   for doorMapID, doorGroup in pairs(bd_doorData) do
     if doorGroup == group then
-      door = ents.GetMapCreatedEntity(doorMapID)
+      local door = ents.GetMapCreatedEntity(doorMapID)
+      if isDoorOverwritten(door) then continue end -- Skip if door is overwritten in some way
+
       if door:getDoorOwner() == nil then
         door:keysOwn(ply)
       elseif door:isKeysAllowedToOwn(ply) then
@@ -110,8 +117,8 @@ hook.Add("playerBoughtDoor", "bd_playerBoughtDoor", function(ply, door, cost)
     end
   end
 end)
-hook.Add("playerSellDoor", "bd_playerSellDoor", function(ply, door, cost)
-  local group = bd_doorData[door:MapCreationID()]
+hook.Add("playerSellDoor", "bd_playerSellDoor", function(ply, sellingDoor, cost)
+  local group = bd_doorData[sellingDoor:MapCreationID()]
   if group == nil then
     -- Door is not in a group, don't intervene
     return
@@ -120,7 +127,9 @@ hook.Add("playerSellDoor", "bd_playerSellDoor", function(ply, door, cost)
   -- Sell other group doors, that are availabe
   for doorMapID, doorGroup in pairs(bd_doorData) do
     if doorGroup == group then
-      door = ents.GetMapCreatedEntity(doorMapID)
+      local door = ents.GetMapCreatedEntity(doorMapID)
+      if isDoorOverwritten(door) then continue end -- Skip if door is overwritten in some way
+
       local coOwners = door:getKeysCoOwners()
 
       if door:isMasterOwner(ply) then
@@ -146,12 +155,12 @@ hook.Add("playerSellDoor", "bd_playerSellDoor", function(ply, door, cost)
   end
 end)
 
--- Enables enheriting when Owner disconnects
+-- Enables enheriting when Owner disconnects (simulates /sellalldoors)
 hook.Add("PlayerDisconnected", "bd_PlayerDisconnected", bd_UnOwnAll)
 
 -- CO-OWNERS
-hook.Add("onAllowedToOwnAdded", "bd_onAllowedToOwnAdded", function(ply, door, target)
-  local group = bd_doorData[door:MapCreationID()]
+hook.Add("onAllowedToOwnAdded", "bd_onAllowedToOwnAdded", function(ply, addOwnDoor, target)
+  local group = bd_doorData[addOwnDoor:MapCreationID()]
   if group == nil then
     -- Door is not in a group, don't intervene
     return
@@ -160,13 +169,15 @@ hook.Add("onAllowedToOwnAdded", "bd_onAllowedToOwnAdded", function(ply, door, ta
   -- Add Co-Owner to other group doors, that are availabe
   for doorMapID, doorGroup in pairs(bd_doorData) do
     if doorGroup == group then
-      door = ents.GetMapCreatedEntity(doorMapID)
+      local door = ents.GetMapCreatedEntity(doorMapID)
+      if isDoorOverwritten(door) then continue end -- Skip if door is overwritten in some way
+
       door:addKeysAllowedToOwn(target)
     end
   end
 end)
-hook.Add("onAllowedToOwnRemoved", "bd_onAllowedToOwnRemoved", function(ply, door, target)
-  local group = bd_doorData[door:MapCreationID()]
+hook.Add("onAllowedToOwnRemoved", "bd_onAllowedToOwnRemoved", function(ply, remOwnDoor, target)
+  local group = bd_doorData[remOwnDoor:MapCreationID()]
   if group == nil then
     -- Door is not in a group, don't intervene
     return
@@ -176,8 +187,10 @@ hook.Add("onAllowedToOwnRemoved", "bd_onAllowedToOwnRemoved", function(ply, door
   for doorMapID, doorGroup in pairs(bd_doorData) do
     if doorGroup == group then
       door = ents.GetMapCreatedEntity(doorMapID)
-        door:removeKeysAllowedToOwn(target)
-        door:removeKeysDoorOwner(target)
+      if isDoorOverwritten(door) then continue end -- Skip if door is overwritten in some way
+
+      door:removeKeysAllowedToOwn(target)
+      door:removeKeysDoorOwner(target)
     end
   end
 end)
