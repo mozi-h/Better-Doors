@@ -28,18 +28,6 @@ local function getDoor(ply)
 end
 
 --[[### Define chat commands ###]]--
-DarkRP.defineChatCommand("nogroup", function(ply, argStr)
-  print("REMOVE DOOR 1")
-  local door = getDoor(ply)
-  if door == nil then return "" end
-
-  bd_doorData[door:MapCreationID()] = nil
-  bd_saveData()
-
-  print("REMOVE DOOR 2")
-  DarkRP.notify(ply, 0, 4, "Group removed")
-  return ""
-end)
 DarkRP.defineChatCommand("setgroup", function(ply, argStr)
   local door = getDoor(ply)
   if door == nil then return "" end
