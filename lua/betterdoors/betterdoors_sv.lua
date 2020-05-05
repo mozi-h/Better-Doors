@@ -181,7 +181,8 @@ hook.Add("playerSellDoor", "bd_playerSellDoor", function(ply, sellingDoor, cost)
       end
     end
   end
-  if total_sold <= 1 then return end -- No other door in group, don't intervene
+  if total_sold == 1 then return end -- No other door in group, don't intervene
+  if total_sold < 1 then return false end -- Prevent money duplication with /sellalldoors
 
   -- Refund money
   ply:addMoney(math.floor(total_refund))
