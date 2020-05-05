@@ -96,26 +96,48 @@ end)
 
 --[[### Implement functionality ###]]--
 -- OWNER
-hook.Add("playerBoughtDoor", "bd_playerBoughtDoor", function(ply, boughtDoor, cost)
-  local group = bd_doorData[boughtDoor:MapCreationID()]
+hook.Add("playerBuyDoor", "bd_playerBoughtDoor", function(ply, buyingDoor, cost)
+  local group = bd_doorData[buyingDoor:MapCreationID()]
   if group == nil then
     -- Door is not in a group, don't intervene
     return
   end
 
   -- Buy other group doors, that are availabe
+  local to_buy = {}
+  local total_cost = 0
   for doorMapID, doorGroup in pairs(bd_doorData) do
     if doorGroup == group then
       local door = ents.GetMapCreatedEntity(doorMapID)
       if isDoorOverwritten(door) then continue end -- Skip if door is overwritten in some way
+      if door:getDoorOwner() != nil and !door:isKeysAllowedToOwn(ply) then continue end -- Skip if not allowed to own
 
+      table.insert(to_buy, door)
+      total_cost = total_cost + hook.Call("getDoorCost", GAMEMODE, ply, door) --math.floor((hook.Call("getDoorCost", GAMEMODE, ply, door) * 0.666) + 0.5)
+      -- if door:getDoorOwner() == nil then
+      --   door:keysOwn(ply)
+      -- elseif door:isKeysAllowedToOwn(ply) then
+      --   door:addKeysDoorOwner(ply)
+      -- end
+    end
+  end
+  if #to_buy <= 1 then return end -- No other door in group, don't intervene
+
+  -- Can the player afford?
+  if !ply:canAfford(total_cost) then
+    DarkRP.notify(ply, 1, 4, "You can not afford these doors!")
+  else
+    ply:addMoney(-total_cost)
+    for k, door in pairs(to_buy) do
       if door:getDoorOwner() == nil then
         door:keysOwn(ply)
-      elseif door:isKeysAllowedToOwn(ply) then
+      else
         door:addKeysDoorOwner(ply)
       end
     end
+    DarkRP.notify(ply, 0, 4, "You have bought " .. #to_buy .. " doors for " .. DarkRP.formatMoney(total_cost) .. "!")
   end
+  return false
 end)
 hook.Add("playerSellDoor", "bd_playerSellDoor", function(ply, sellingDoor, cost)
   local group = bd_doorData[sellingDoor:MapCreationID()]
@@ -125,6 +147,8 @@ hook.Add("playerSellDoor", "bd_playerSellDoor", function(ply, sellingDoor, cost)
   end
 
   -- Sell other group doors, that are availabe
+  local total_sold = 0
+  local total_refund = 0
   for doorMapID, doorGroup in pairs(bd_doorData) do
     if doorGroup == group then
       local door = ents.GetMapCreatedEntity(doorMapID)
@@ -134,6 +158,8 @@ hook.Add("playerSellDoor", "bd_playerSellDoor", function(ply, sellingDoor, cost)
 
       if door:isMasterOwner(ply) then
         -- Remove ownage from other door
+        total_sold = total_sold + 1
+        total_refund = total_refund + hook.Call("getDoorCost", GAMEMODE, ply, door) * 0.666 + 0.5
         door:keysUnOwn(ply)
         if coOwners != nil then
           -- Make co-owner owner
@@ -149,10 +175,18 @@ hook.Add("playerSellDoor", "bd_playerSellDoor", function(ply, sellingDoor, cost)
         end
       elseif door:isKeysOwnedBy(ply) then
         -- Remove co-ownage from other door
+        total_sold = total_sold + 1
+        total_refund = total_refund + math.floor((hook.Call("getDoorCost", GAMEMODE, ply, door) * 0.666) + 0.5)
         door:keysUnOwn(ply)
       end
     end
   end
+  if total_sold <= 1 then return end -- No other door in group, don't intervene
+
+  -- Refund money
+  ply:addMoney(math.floor(total_refund))
+  DarkRP.notify(ply, 0, 4, DarkRP.getPhrase("sold_x_doors", total_sold, DarkRP.formatMoney(math.floor(total_refund))))
+  return false
 end)
 
 -- Enables enheriting when Owner disconnects (simulates /sellalldoors)
