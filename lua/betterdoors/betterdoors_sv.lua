@@ -8,6 +8,10 @@ local bd_doorData = util.JSONToTable(file.Read(bd_filename) or "{}")
 
 -- Saves data to file
 local function bd_saveData()
+  if !file.Exists(bd_filename, "DATA") then
+    -- Create garrysmod/data/betterdoors directory
+    file.CreateDir("betterdoors")
+  end
   file.Write(bd_filename, util.TableToJSON(bd_doorData, true))
 end
 
