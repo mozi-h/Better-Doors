@@ -8,6 +8,10 @@ local bd_doorData = util.JSONToTable(file.Read(bd_filename) or "{}")
 
 -- Saves data to file
 local function bd_saveData()
+  if !file.Exists(bd_filename, "DATA") then
+    -- Create garrysmod/data/betterdoors directory
+    file.CreateDir("betterdoors")
+  end
   file.Write(bd_filename, util.TableToJSON(bd_doorData, true))
 end
 
@@ -31,6 +35,17 @@ end
 function isDoorOverwritten(door)
   return door:getKeysDoorGroup() != nil or door:getKeysDoorTeams() != nil or door:getKeysNonOwnable() != nil
 end
+
+--[[### Define (server-side) console commands ###]]--
+concommand.Add( "bd_reloadconfig", function(ply)
+  if ply == NULL or (ply:IsSuperAdmin() and !game.IsDedicated()) then
+    -- Only allow clients to execute as SuperAdmin if this is a local server
+    print("Reloading Better Doors configuration file.")
+
+    -- Load config from file (if available)
+    bd_doorData = util.JSONToTable(file.Read(bd_filename) or "{}")
+  end
+end, nil, "Reloads the Better Door configuration file. Use if manually changed to avoid a restart.")
 
 --[[### Define chat commands ###]]--
 DarkRP.defineChatCommand("setgroup", function(ply, argStr)
