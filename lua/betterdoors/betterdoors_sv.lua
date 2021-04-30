@@ -136,6 +136,14 @@ hook.Add("playerBuyDoor", "bd_playerBoughtDoor", function(ply, buyingDoor, cost)
       -- end
     end
   end
+
+  -- Does the player exceed the door limit? Always allow one apartment complex though
+  ply.OwnedNumz = ply.OwnedNumz or 0
+  if (ply.OwnedNumz + #to_buy) > GAMEMODE.Config.maxdoors and ply.OwnedNumz > 0 then
+    DarkRP.notify(ply, 1, 4, DarkRP.getPhrase("limit", DarkRP.getPhrase("door")))
+    return false
+  end
+
   if #to_buy <= 1 then return end -- No other door in group, don't intervene
 
   -- Can the player afford?
