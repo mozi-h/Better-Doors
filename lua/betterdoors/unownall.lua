@@ -1,5 +1,6 @@
 --[[
-  This is taken straight from DarkRPs code to ensure disconnected players do a forced /unownalldoors on disconnect
+  This is taken from DarkRPs code to ensure disconnected players do a forced /unownalldoors on disconnect.
+  Returns replaced to return nothing in order to prevent halting the event execution on PlayerDisconnected hooks.
 ]]
 
 function bd_UnOwnAll(ply)
@@ -39,10 +40,10 @@ function bd_UnOwnAll(ply)
     cost = cost + GiveMoneyBack
   end
 
-  if amount == 0 then return "" end
+  if amount == 0 then return end
 
   ply:addMoney(math.floor(cost))
 
   DarkRP.notify(ply, 2, 4, DarkRP.getPhrase("sold_x_doors", amount, DarkRP.formatMoney(math.floor(cost))))
-  return ""
+  return
 end
